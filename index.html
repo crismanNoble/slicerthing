@@ -1,0 +1,151 @@
+<html>
+<head>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="./domtoimg.js" ></script>
+
+  <style>
+    html {
+      box-sizing: border-box;
+    }
+    * {
+      box-sizing: inherit;
+    }
+    :root {
+      --slice_count: 2;
+      --image_width: 200px;
+      --cell_width: calc(var(--image_width) / var(--slice_count));
+      --base_image_src: url('./img/giphy.webp');
+    }
+    .cells {
+      display: flex;
+      width: calc(2*var(--image_width));
+      flex-wrap: wrap;
+    }
+    .cell {
+      width: var(--cell_width);
+      height: var(--cell_width);
+      background-image: var(--base_image_src);
+      background-size: var(--image_width);
+      background-position-x: inherit;
+      background-position-y: inherit;
+/*      border: 1px solid red;*/
+    }
+    .--rf {
+      transform: rotate(180deg);
+    }
+    .--r {
+      transform: scaleX(-1);
+    }
+    .--f {
+      transform: scaleY(-1);
+    }
+    .cell-cluster {
+      width: calc(2*var(--cell_width));
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .base_image {
+      width: calc(1*var(--image_width));
+      height: calc(1*var(--image_width));
+      background-image: var(--base_image_src);
+      background-size: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<form>
+
+  <div class="base_image">
+  
+  </div>
+
+  <fieldset>
+    <label for="base_image_src" >Base Image URL</label>
+    <input type="text" value="./img/nina.png" id="base_image_src" name="base_image_src">
+  </fieldset>
+
+  <fieldset>
+    <label for="image_width" >Image Width</label>
+    <input type="number" value="200" step=20 id="image_width" name="image_width">
+  </fieldset>
+
+  <fieldset>
+    <label for="slice_count" >Slice Count</label>
+    <input type="number" value="10" id="slice_count" name="slice_count">
+  </fieldset>
+  
+</form>
+<div class="cells">
+</div>
+
+<div class="actions">
+  <button id="download">Download</button>
+</div>
+
+<script>
+$(document).ready(function(){
+  
+  function compute_slices() {
+    var new_slice_count = $('#slice_count').val();
+    $(':root').css('--slice_count', new_slice_count);
+
+    var new_image_width = $('#image_width').val();
+    $(':root').css('--image_width', new_image_width +'px');
+
+    var new_image_source = $('#base_image_src').val();
+    $(':root').css('--base_image_src', 'url('+new_image_source+')');
+
+    var $grid = $('.cells');
+    var $cluster = $(document.createElement('div')).addClass('cell-cluster');
+    $cluster.append('<div class="cell"></div>');
+    $cluster.append('<div class="cell --r"></div>');
+    $cluster.append('<div class="cell --f"></div>');
+    $cluster.append('<div class="cell --rf"></div>');
+    $grid.html('');//clear out
+    //4 slices means 4 rows and 4 columns
+    for(var r=0; r<new_slice_count; r++) {
+      for(var c=0; c<new_slice_count; c++) {
+        var $cluster_new = $cluster.clone();
+        $cluster_new.attr('data-c',c);
+        $cluster_new.attr('data-r',r);
+
+
+        var x_offset = -1*c*new_image_width/new_slice_count;
+        var y_offset = -1*r*new_image_width/new_slice_count;
+
+        $cluster_new.css('background-position-x',x_offset);
+        $cluster_new.css('background-position-y',y_offset);
+
+        $grid.append($cluster_new);
+      }
+    }
+  }
+  compute_slices();
+  $('#download').click(function(){
+    var box = $('.cells')[0];
+    domtoimage.toPng(box)
+      .then (function (dataUrl) {
+          var img = new Image();
+          img.src = dataUrl;
+          document.appendChild(img);
+      })
+      .catch(function (error) {
+          console.error('oops, something went wrong!', error);
+      });
+  });
+  $('#slice_count').change(function(){
+    compute_slices();
+  });
+  $('#base_image_src').change(function(){
+    compute_slices();
+  });
+  $('#image_width').change(function(){
+    compute_slices();
+  });
+});
+</script>
+    
+</body>
+</html>
